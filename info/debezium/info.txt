@@ -9,6 +9,7 @@ https://spring.io/blog/2020/12/14/case-study-change-data-capture-cdc-analysis-wi
 WAL в PostgreSQL: 4. Настройка журнала
 https://habr.com/ru/companies/postgrespro/articles/461523/
 https://postgrespro.ru/docs/postgrespro/10/runtime-config-wal
+https://stackoverflow.com/questions/67490668/changing-wal-level-on-postgresql-13-via-client-session-is-not-being-respecte
 
 Kafka Connect на примере Debezium PostgresConnector
 https://habr.com/ru/articles/779620/
