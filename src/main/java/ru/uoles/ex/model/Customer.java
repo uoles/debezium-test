@@ -9,8 +9,8 @@ import javax.persistence.Id;
 @Entity
 public class Customer {
 
-  @Id
-  private Long id;
-  private String fullname;
-  private String email;
+    @Id
+    private Long id;
+    private String fullname;
+    private String email;
 }

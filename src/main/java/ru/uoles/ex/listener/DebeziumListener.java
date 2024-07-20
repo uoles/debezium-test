@@ -38,36 +38,36 @@ public class DebeziumListener {
 
     public DebeziumListener(Configuration customerConnectorConfiguration) {
         this.debeziumEngine = DebeziumEngine.create(ChangeEventFormat.of(Connect.class))
-            .using(customerConnectorConfiguration.asProperties())
-            .notifying(this::handleChangeEvent)
-            .build();
+                .using(customerConnectorConfiguration.asProperties())
+                .notifying(this::handleChangeEvent)
+                .build();
     }
 
     private void handleChangeEvent(RecordChangeEvent<SourceRecord> sourceRecordRecordChangeEvent) {
         var sourceRecord = sourceRecordRecordChangeEvent.record();
         log.info("Key = {}, Value = {}", sourceRecord.key(), sourceRecord.value());
-        var sourceRecordChangeValue= (Struct) sourceRecord.value();
+        var sourceRecordChangeValue = (Struct) sourceRecord.value();
         log.info("SourceRecordChangeValue = '{}'", sourceRecordChangeValue);
 
-         if (sourceRecordChangeValue != null) {
-             Operation operation = Operation.forCode((String) sourceRecordChangeValue.get(OPERATION));
+        if (sourceRecordChangeValue != null) {
+            Operation operation = Operation.forCode((String) sourceRecordChangeValue.get(OPERATION));
 
-             if(operation != Operation.READ) {
-                 String record = operation == Operation.DELETE
-                         ? BEFORE
-                         : AFTER;
+            if (operation != Operation.READ) {
+                String record = operation == Operation.DELETE
+                        ? BEFORE
+                        : AFTER;
 
-                 Struct struct = (Struct) sourceRecordChangeValue.get(record);
-                 Map<String, Object> payload = struct.schema().fields().stream()
-                     .map(Field::name)
-                     .filter(fieldName -> struct.get(fieldName) != null)
-                     .map(fieldName -> Pair.of(fieldName, struct.get(fieldName)))
-                     .collect(toMap(Pair::getKey, Pair::getValue));
+                Struct struct = (Struct) sourceRecordChangeValue.get(record);
+                Map<String, Object> payload = struct.schema().fields().stream()
+                        .map(Field::name)
+                        .filter(fieldName -> struct.get(fieldName) != null)
+                        .map(fieldName -> Pair.of(fieldName, struct.get(fieldName)))
+                        .collect(toMap(Pair::getKey, Pair::getValue));
 
-                 customerService.replicateData(payload, operation);
-                 log.info("Updated Data: {} with Operation: {}", payload, operation.name());
-             }
-         }
+                customerService.replicateData(payload, operation);
+                log.info("Updated Data: {} with Operation: {}", payload, operation.name());
+            }
+        }
     }
 
     @PostConstruct
