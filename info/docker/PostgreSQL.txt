@@ -11,6 +11,7 @@ docker run --name test-postgres-source -e POSTGRES_PASSWORD=mysecretpassword -e 
 docker run --name test-postgres-target -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_USER=dbz -e POSTGRES_DB=testdbz -p 5433:5432 -v "e:\Sourses\Java\_docker\postgresql-target\data":"/var/lib/postgresql/data" -d postgres
 ------------
 
+CREATE CHEMA dbz;
 
 CREATE TABLE dbz.customer
 (
