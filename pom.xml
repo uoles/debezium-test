@@ -10,7 +10,7 @@
   </parent>
 
   <groupId>ru.uoles.ex</groupId>
-  <artifactId>spring-boot-debezium-postgres</artifactId>
+  <artifactId>debezium-test</artifactId>
   <version>1.0.0</version>
 
   <properties>
