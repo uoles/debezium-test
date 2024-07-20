@@ -10,3 +10,23 @@ docker run --name test-postgres-source -e POSTGRES_PASSWORD=mysecretpassword -e 
 
 docker run --name test-postgres-target -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_USER=dbz -e POSTGRES_DB=testdbz -p 5433:5432 -v "e:\Sourses\Java\_docker\postgresql-target\data":"/var/lib/postgresql/data" -d postgres
 ------------
+
+
+CREATE TABLE customer
+(
+    id integer NOT NULL,
+    fullname character varying(255),
+    email character varying(255),
+    CONSTRAINT customer_pkey PRIMARY KEY (id)
+);
+
+SELECT * FROM pg_settings WHERE name ='wal_level';
+
+ALTER SYSTEM SET wal_level = logical;
+
+INSERT INTO customerdb.customer (id, fullname, email) VALUES (1, 'John Doe', 'jd@example.com')
+
+UPDATE customerdb.customer t SET t.email = 'john.doe@example.com' WHERE t.id = 1
+
+DELETE FROM customerdb.customer WHERE id = 1
+
