@@ -1,0 +1,12 @@
+https://habr.com/ru/articles/578744/
+
+docker pull postgres
+------------
+docker run --name test-postgres -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_USER=dbz -e POSTGRES_DB=testdbz -p 5432:5432 -d postgres
+
+docker run --name test-postgres-target -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_USER=dbz -e POSTGRES_DB=testdbz -p 5433:5432 -d postgres
+------------
+docker run --name test-postgres-source -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_USER=dbz -e POSTGRES_DB=testdbz -p 5432:5432 -v "e:\Sourses\Java\_docker\postgresql-source\data":"/var/lib/postgresql/data" -d postgres
+
+docker run --name test-postgres-target -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_USER=dbz -e POSTGRES_DB=testdbz -p 5433:5432 -v "e:\Sourses\Java\_docker\postgresql-target\data":"/var/lib/postgresql/data" -d postgres
+------------

@@ -1,0 +1,18 @@
+Инфо по cdc
+https://habr.com/ru/companies/yandex_cloud_and_infra/articles/754802/
+https://datafinder.ru/products/istoricheskiy-obzor-kak-cdc-instrumenty-i-podhody-razvivalis-na-praktike
+
+Debezium
+https://habr.com/ru/companies/lanit/articles/654259/
+https://spring.io/blog/2020/12/14/case-study-change-data-capture-cdc-analysis-with-cdc-debezium-source-and-analytics-sink-in-real-time
+
+WAL в PostgreSQL: 4. Настройка журнала
+https://habr.com/ru/companies/postgrespro/articles/461523/
+https://postgrespro.ru/docs/postgrespro/10/runtime-config-wal
+
+Kafka Connect на примере Debezium PostgresConnector
+https://habr.com/ru/articles/779620/
+
+Debezium + Java + PostgreSQL
+work 50/50 https://github.com/davidarchanjo/spring-boot-debezium-postgres/tree/master
+https://www.baeldung.com/debezium-intro
