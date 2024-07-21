@@ -17,6 +17,7 @@ import ru.uoles.ex.service.CustomerService;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
@@ -32,42 +33,58 @@ public class DebeziumListener {
 
     private final Executor executor = Executors.newSingleThreadExecutor();
     private final DebeziumEngine<RecordChangeEvent<SourceRecord>> debeziumEngine;
+    private final CustomerService customerService;
 
     @Autowired
-    private CustomerService customerService;
-
-    public DebeziumListener(Configuration customerConnectorConfiguration) {
+    public DebeziumListener(Configuration customerConnectorConfiguration, CustomerService customerService) {
         this.debeziumEngine = DebeziumEngine.create(ChangeEventFormat.of(Connect.class))
                 .using(customerConnectorConfiguration.asProperties())
                 .notifying(this::handleChangeEvent)
                 .build();
+
+        this.customerService = customerService;
     }
 
     private void handleChangeEvent(RecordChangeEvent<SourceRecord> sourceRecordRecordChangeEvent) {
-        var sourceRecord = sourceRecordRecordChangeEvent.record();
-        log.info("Key = {}, Value = {}", sourceRecord.key(), sourceRecord.value());
-        var sourceRecordChangeValue = (Struct) sourceRecord.value();
-        log.info("SourceRecordChangeValue = '{}'", sourceRecordChangeValue);
+        try {
+            SourceRecord sourceRecord = sourceRecordRecordChangeEvent.record();
+            log.info("Key = {}, Value = {}", sourceRecord.key(), sourceRecord.value());
 
-        if (sourceRecordChangeValue != null) {
-            Operation operation = Operation.forCode((String) sourceRecordChangeValue.get(OPERATION));
+            Struct sourceRecordChangeValue = (Struct) sourceRecord.value();
+            log.info("SourceRecordChangeValue = '{}'", sourceRecordChangeValue);
 
-            if (operation != Operation.READ) {
-                String record = operation == Operation.DELETE
-                        ? BEFORE
-                        : AFTER;
+            if (sourceRecordChangeValue != null) {
+                Operation operation = Operation.forCode((String) sourceRecordChangeValue.get(OPERATION));
 
-                Struct struct = (Struct) sourceRecordChangeValue.get(record);
-                Map<String, Object> payload = struct.schema().fields().stream()
-                        .map(Field::name)
-                        .filter(fieldName -> struct.get(fieldName) != null)
-                        .map(fieldName -> Pair.of(fieldName, struct.get(fieldName)))
-                        .collect(toMap(Pair::getKey, Pair::getValue));
+                if (operation != Operation.READ) {
+                    Map<String, Object> dataBefore = getData((Struct) sourceRecordChangeValue.get(BEFORE));
+                    log.info("--- Operation: {}", operation.name());
+                    log.info("--- BEFORE. Data: {}", dataBefore);
 
-                customerService.replicateData(payload, operation);
-                log.info("Updated Data: {} with Operation: {}", payload, operation.name());
+                    Map<String, Object> dataAfter = getData((Struct) sourceRecordChangeValue.get(AFTER));
+                    log.info("--- AFTER. Data: {}", dataAfter);
+
+                    customerService.replicateData(
+                            operation.equals(Operation.DELETE) ? dataBefore : dataAfter,
+                            operation
+                    );
+                }
             }
+        } catch (Exception e) {
+            throw new RuntimeException("ERROR. Processing database event exception: " + e.getMessage(), e);
         }
+    }
+
+    public Map<String, Object> getData(Struct struct) {
+        Map<String, Object> map = new HashMap<>();
+        if (Objects.nonNull(struct)) {
+            map = struct.schema().fields().stream()
+                    .map(Field::name)
+                    .filter(fieldName -> struct.get(fieldName) != null)
+                    .map(fieldName -> Pair.of(fieldName, struct.get(fieldName)))
+                    .collect(toMap(Pair::getKey, Pair::getValue));
+        }
+        return map;
     }
 
     @PostConstruct

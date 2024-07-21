@@ -21,13 +21,15 @@ CREATE TABLE dbz.customer
     CONSTRAINT customer_pkey PRIMARY KEY (id)
 );
 
-SELECT * FROM pg_settings WHERE name ='wal_level';
+ALTER TABLE products REPLICA IDENTITY FULL;
+
+SELECT * FROM pg_settings WHERE name = 'wal_level';
 
 ALTER SYSTEM SET wal_level = logical;
 
 INSERT INTO dbz.customer (id, fullname, email) VALUES (1, 'John Doe', 'jd@example.com')
 
-UPDATE dbz.customer t SET t.email = 'john.doe@example.com' WHERE t.id = 1
+UPDATE dbz.customer SET email = 'john.doe@example.com' WHERE id = 1
 
 DELETE FROM dbz.customer WHERE id = 1
 
