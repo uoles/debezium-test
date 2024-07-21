@@ -21,10 +21,12 @@ CREATE TABLE dbz.customer
     CONSTRAINT customer_pkey PRIMARY KEY (id)
 );
 
-ALTER TABLE products REPLICA IDENTITY FULL;
+-- для получения полной информации при обновлении записи (состояние до и после)
+ALTER TABLE dbz.customer REPLICA IDENTITY FULL;
 
 SELECT * FROM pg_settings WHERE name = 'wal_level';
 
+-- для работы cdc нужно установить уровень журнала logical и перезагрузить базу
 ALTER SYSTEM SET wal_level = logical;
 
 INSERT INTO dbz.customer (id, fullname, email) VALUES (1, 'John Doe', 'jd@example.com')
