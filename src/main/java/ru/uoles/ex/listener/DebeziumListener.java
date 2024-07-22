@@ -6,7 +6,6 @@ import io.debezium.engine.DebeziumEngine;
 import io.debezium.engine.RecordChangeEvent;
 import io.debezium.engine.format.ChangeEventFormat;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -53,10 +52,10 @@ public class DebeziumListener {
             Struct sourceRecordChangeValue = (Struct) sourceRecord.value();
             log.info("SourceRecordChangeValue = '{}'", sourceRecordChangeValue);
 
-            if (sourceRecordChangeValue != null) {
+            if (Objects.nonNull(sourceRecordChangeValue)) {
                 Operation operation = Operation.forCode((String) sourceRecordChangeValue.get(OPERATION));
 
-                if (operation != Operation.READ) {
+                if (!operation.equals(Operation.READ)) {
                     Map<String, Object> dataBefore = getData((Struct) sourceRecordChangeValue.get(BEFORE));
                     log.info("--- Operation: {}", operation.name());
                     log.info("--- BEFORE. Data: {}", dataBefore);
@@ -75,14 +74,12 @@ public class DebeziumListener {
         }
     }
 
-    public Map<String, Object> getData(Struct struct) {
+    public Map<String, Object> getData(final Struct struct) {
         Map<String, Object> map = new HashMap<>();
         if (Objects.nonNull(struct)) {
             map = struct.schema().fields().stream()
-                    .map(Field::name)
-                    .filter(fieldName -> struct.get(fieldName) != null)
-                    .map(fieldName -> Pair.of(fieldName, struct.get(fieldName)))
-                    .collect(toMap(Pair::getKey, Pair::getValue));
+                    .filter(o -> Objects.nonNull(struct.get(o.name())))
+                    .collect(toMap(Field::name, o -> struct.get(o.name())));
         }
         return map;
     }
@@ -90,12 +87,14 @@ public class DebeziumListener {
     @PostConstruct
     private void start() {
         this.executor.execute(debeziumEngine);
+        log.info("--- DebeziumListener started.");
     }
 
     @PreDestroy
     private void stop() throws IOException {
         if (Objects.nonNull(this.debeziumEngine)) {
             this.debeziumEngine.close();
+            log.info("--- DebeziumListener stopped.");
         }
     }
 }
