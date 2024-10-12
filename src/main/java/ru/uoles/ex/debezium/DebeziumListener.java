@@ -1,4 +1,4 @@
-package ru.uoles.ex.listener;
+package ru.uoles.ex.debezium;
 
 import io.debezium.config.Configuration;
 import io.debezium.embedded.Connect;
