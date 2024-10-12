@@ -27,7 +27,7 @@ import ru.uoles.ex.config.JdbcOffsetBackingStoreConfig;
  *
  * Implementation of OffsetBackingStore that saves data to database table.
  * Source: https://review.couchbase.org/c/kafka-connect-mongo/+/202601/4/debezium-storage/
- *              debezium-storage-jdbc/src/main/java/io/debezium/storage/jdbc/offset/JdbcOffsetBackingStore.java#b44
+ *              debezium-storage-jdbc/src/main/java/io/debezium/storage/jdbc/offset/JdbcOffsetBackingStore.java
  */
 public class PostgresJdbcOffsetBackingStore implements OffsetBackingStore {
 
@@ -59,8 +59,7 @@ public class PostgresJdbcOffsetBackingStore implements OffsetBackingStore {
 
             conn = DriverManager.getConnection(this.config.getJdbcUrl(), this.config.getUser(), this.config.getPassword());
             conn.setAutoCommit(false);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to connect JDBC offset backing store: " + config.originalsStrings(), e);
         }
     }
@@ -73,8 +72,7 @@ public class PostgresJdbcOffsetBackingStore implements OffsetBackingStore {
         LOGGER.info("Starting PostgresJdbcOffsetBackingStore db '{}'", config.getJdbcUrl());
         try {
             initializeTable();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             throw new IllegalStateException("Failed to create JDBC offset table: " + config.getJdbcUrl(), e);
         }
         load();
@@ -114,12 +112,10 @@ public class PostgresJdbcOffsetBackingStore implements OffsetBackingStore {
                 }
             }
             conn.commit();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             try {
                 conn.rollback();
-            }
-            catch (SQLException ex) {
+            } catch (SQLException ex) {
                 // Ignore errors on rollback
             }
             throw new ConnectException(e);
@@ -137,8 +133,7 @@ public class PostgresJdbcOffsetBackingStore implements OffsetBackingStore {
                 tmpData.put(key, val);
             }
             data = tmpData;
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             throw new ConnectException("Failed recover records from database: " + config.getJdbcUrl(), e);
         }
     }
@@ -149,10 +144,10 @@ public class PostgresJdbcOffsetBackingStore implements OffsetBackingStore {
             // Best effort wait for any get() and set() tasks (and caller's callbacks) to complete.
             try {
                 executor.awaitTermination(30, TimeUnit.SECONDS);
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+
             if (!executor.shutdownNow().isEmpty()) {
                 throw new ConnectException("Failed to stop PostgresJdbcOffsetBackingStore. Exiting without cleanly " +
                         "shutting down pending tasks and/or callbacks.");
@@ -168,16 +163,14 @@ public class PostgresJdbcOffsetBackingStore implements OffsetBackingStore {
             if (conn != null) {
                 conn.close();
             }
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             LOGGER.error("Exception while stopping PostgresJdbcOffsetBackingStore", e);
         }
         LOGGER.info("Stopped PostgresJdbcOffsetBackingStore");
     }
 
     @Override
-    public Future<Void> set(final Map<ByteBuffer, ByteBuffer> values,
-                            final Callback<Void> callback) {
+    public Future<Void> set(final Map<ByteBuffer, ByteBuffer> values, final Callback<Void> callback) {
         return executor.submit(new Callable<>() {
             @Override
             public Void call() {
@@ -188,6 +181,7 @@ public class PostgresJdbcOffsetBackingStore implements OffsetBackingStore {
                     data.put(fromByteBuffer(entry.getKey()), fromByteBuffer(entry.getValue()));
                 }
                 save();
+
                 if (callback != null) {
                     callback.onCompletion(null, null);
                 }
