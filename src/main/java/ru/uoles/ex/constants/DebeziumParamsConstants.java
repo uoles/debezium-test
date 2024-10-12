@@ -50,13 +50,23 @@ public final class DebeziumParamsConstants {
             .withDescription("Create table syntax for offset jdbc table")
             .withDefault(DEFAULT_TABLE_DDL);
 
-    public static final String DEFAULT_TABLE_SELECT = "SELECT id, offset_key, offset_val FROM %s " +
-            "ORDER BY record_insert_ts, record_insert_seq";
+    public static final String DEFAULT_TABLE_SELECT =
+            "SELECT id, offset_key, offset_val " +
+            " FROM %s " +
+            " ORDER BY record_insert_ts desc, record_insert_seq desc ";
 
-    public static final String DEFAULT_TABLE_DELETE = "DELETE FROM %s";
+    public static final String DEFAULT_TABLE_DELETE =
+            " DELETE FROM %s " +
+            " WHERE id not in ( " +
+            "   SELECT id  " +
+            "   FROM %s " +
+            "   ORDER BY record_insert_ts desc, record_insert_seq desc " +
+            "   LIMIT 10 " +
+            " )";
 
-    public static final String DEFAULT_TABLE_INSERT = "INSERT INTO %s(id, offset_key, offset_val, record_insert_ts, record_insert_seq) " +
-            "VALUES ( ?, ?, ?, ?, ? )";
+    public static final String DEFAULT_TABLE_INSERT =
+            "INSERT INTO %s(id, offset_key, offset_val, record_insert_ts, record_insert_seq) " +
+            " VALUES ( :id, :key, :value, :timestamp, :pos )";
 
     public static final Field PROP_TABLE_SELECT = Field.create(PROP_PREFIX + "offset.table.select")
             .withDescription("Select syntax to get offset data from jdbc table")

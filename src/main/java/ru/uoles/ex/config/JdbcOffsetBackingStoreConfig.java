@@ -1,10 +1,10 @@
 package ru.uoles.ex.config;
 
-import static ru.uoles.ex.constants.DebeziumParamsConstants.*;
-
 import io.debezium.config.Configuration;
-import lombok.Data;
+import lombok.Getter;
 import org.apache.kafka.connect.runtime.WorkerConfig;
+
+import static ru.uoles.ex.constants.DebeziumParamsConstants.*;
 
 /**
  * debezium-test
@@ -16,17 +16,24 @@ import org.apache.kafka.connect.runtime.WorkerConfig;
  * Source: https://review.couchbase.org/c/kafka-connect-mongo/+/202601/4/debezium-storage/
  *              debezium-storage-jdbc/src/main/java/io/debezium/storage/jdbc/offset/JdbcOffsetBackingStoreConfig.java
  */
-@Data
 public class JdbcOffsetBackingStoreConfig {
 
-    private String tableCreate;
-    private String tableSelect;
-    private String tableDelete;
-    private String tableInsert;
-    private String tableSchema;
     private String tableName;
+    @Getter
+    private String tableSchema;
+    @Getter
+    private String tableCreate;
+    @Getter
+    private String tableSelect;
+    @Getter
+    private String tableDelete;
+    @Getter
+    private String tableInsert;
+    @Getter
     private String jdbcUrl;
+    @Getter
     private String user;
+    @Getter
     private String password;
 
     public JdbcOffsetBackingStoreConfig(Configuration config, WorkerConfig configOriginal) {
@@ -38,7 +45,7 @@ public class JdbcOffsetBackingStoreConfig {
         this.tableCreate = String.format(config.getString(PROP_TABLE_DDL), tableName);
         this.tableSelect = String.format(config.getString(PROP_TABLE_SELECT), tableName);
         this.tableInsert = String.format(config.getString(PROP_TABLE_INSERT), tableName);
-        this.tableDelete = String.format(config.getString(PROP_TABLE_DELETE), tableName);
+        this.tableDelete = String.format(config.getString(PROP_TABLE_DELETE), tableName, tableName);
 
         this.tableSchema = configOriginal.originalsStrings().get("offset.jdbc.schema");
         this.jdbcUrl = configOriginal.originalsStrings().get("offset.jdbc.url");

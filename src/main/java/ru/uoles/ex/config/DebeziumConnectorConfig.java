@@ -14,7 +14,7 @@ public class DebeziumConnectorConfig {
         return io.debezium.config.Configuration.create()
                 .with("name", "customer_postgres_connector")
                 .with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
-                .with("offset.storage", "ru.uoles.ex.debezium.PostgresJdbcOffsetBackingStore")
+                .with("offset.storage", "ru.uoles.ex.debezium.PostgreJdbcOffsetBackingStore")
                 .with("offset.jdbc.url", env.getProperty("customer.datasource.jdbcurl"))
                 .with("offset.jdbc.user", env.getProperty("customer.datasource.username"))
                 .with("offset.jdbc.password", env.getProperty("customer.datasource.password"))
