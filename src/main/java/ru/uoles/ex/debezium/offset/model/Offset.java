@@ -1,4 +1,4 @@
-package ru.uoles.ex.model;
+package ru.uoles.ex.debezium.offset.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

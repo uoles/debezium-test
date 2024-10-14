@@ -1,4 +1,4 @@
-package ru.uoles.ex.debezium;
+package ru.uoles.ex.debezium.offset;
 
 import io.debezium.config.Configuration;
 import org.apache.kafka.common.utils.ThreadUtils;
@@ -12,8 +12,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import ru.uoles.ex.config.JdbcOffsetBackingStoreConfig;
-import ru.uoles.ex.model.Offset;
+import ru.uoles.ex.debezium.offset.model.Offset;
 
 import javax.sql.DataSource;
 import java.nio.ByteBuffer;
@@ -34,17 +33,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Source: https://review.couchbase.org/c/kafka-connect-mongo/+/202601/4/debezium-storage/
  *              debezium-storage-jdbc/src/main/java/io/debezium/storage/jdbc/offset/JdbcOffsetBackingStore.java
  */
-public class PostgreJdbcOffsetBackingStore implements OffsetBackingStore {
+public class PostgreOffsetBackingStore implements OffsetBackingStore {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PostgreJdbcOffsetBackingStore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PostgreOffsetBackingStore.class);
 
-    private JdbcOffsetBackingStoreConfig config;
+    private PostgreOffsetBackingStoreConfig config;
     private ConcurrentHashMap<String, String> data = new ConcurrentHashMap<>();
     private ExecutorService executor;
     private final AtomicInteger recordInsertSeq = new AtomicInteger(0);
     private NamedParameterJdbcTemplate template;
 
-    public PostgreJdbcOffsetBackingStore() {
+    public PostgreOffsetBackingStore() {
     }
 
     public String fromByteBuffer(ByteBuffer data) {
@@ -76,7 +75,7 @@ public class PostgreJdbcOffsetBackingStore implements OffsetBackingStore {
     public void configure(WorkerConfig config) {
         try {
             Configuration configuration = Configuration.from(config.originalsStrings());
-            this.config = new JdbcOffsetBackingStoreConfig(configuration, config);
+            this.config = new PostgreOffsetBackingStoreConfig(configuration, config);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to connect JDBC offset backing store: " + config.originalsStrings(), e);
         }

@@ -1,10 +1,10 @@
-package ru.uoles.ex.config;
+package ru.uoles.ex.debezium.offset;
 
 import io.debezium.config.Configuration;
 import lombok.Getter;
 import org.apache.kafka.connect.runtime.WorkerConfig;
 
-import static ru.uoles.ex.constants.DebeziumParamsConstants.*;
+import static ru.uoles.ex.debezium.offset.PostgreOffsetBackingStoreConstants.*;
 
 /**
  * debezium-test
@@ -16,7 +16,7 @@ import static ru.uoles.ex.constants.DebeziumParamsConstants.*;
  * Source: https://review.couchbase.org/c/kafka-connect-mongo/+/202601/4/debezium-storage/
  *              debezium-storage-jdbc/src/main/java/io/debezium/storage/jdbc/offset/JdbcOffsetBackingStoreConfig.java
  */
-public class JdbcOffsetBackingStoreConfig {
+public class PostgreOffsetBackingStoreConfig {
 
     private String tableName;
     @Getter
@@ -36,7 +36,7 @@ public class JdbcOffsetBackingStoreConfig {
     @Getter
     private String password;
 
-    public JdbcOffsetBackingStoreConfig(Configuration config, WorkerConfig configOriginal) {
+    public PostgreOffsetBackingStoreConfig(Configuration config, WorkerConfig configOriginal) {
         init(config, configOriginal);
     }
 

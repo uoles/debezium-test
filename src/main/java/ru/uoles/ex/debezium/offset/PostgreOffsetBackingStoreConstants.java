@@ -1,4 +1,4 @@
-package ru.uoles.ex.constants;
+package ru.uoles.ex.debezium.offset;
 
 import io.debezium.config.Field;
 
@@ -14,7 +14,7 @@ import static io.debezium.relational.history.DatabaseHistory.CONFIGURATION_FIELD
  * Source: https://review.couchbase.org/c/kafka-connect-mongo/+/202601/4/debezium-storage/
  *              debezium-storage-jdbc/src/main/java/io/debezium/storage/jdbc/offset/JdbcOffsetBackingStoreConfig.java
  */
-public final class DebeziumParamsConstants {
+public final class PostgreOffsetBackingStoreConstants {
 
     public static final String OFFSET_STORAGE_PREFIX = "offset.storage.";
     public static final String PROP_PREFIX = OFFSET_STORAGE_PREFIX + CONFIGURATION_FIELD_PREFIX_STRING;
