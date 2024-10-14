@@ -8,17 +8,18 @@ import org.apache.kafka.connect.storage.OffsetBackingStore;
 import org.apache.kafka.connect.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.PreparedStatementCallback;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import ru.uoles.ex.debezium.offset.model.Offset;
+import ru.uoles.ex.debezium.offset.db.PostgreConnection;
 
-import javax.sql.DataSource;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.sql.*;
-import java.util.*;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,8 +41,8 @@ public class PostgreOffsetBackingStore implements OffsetBackingStore {
     private PostgreOffsetBackingStoreConfig config;
     private ConcurrentHashMap<String, String> data = new ConcurrentHashMap<>();
     private ExecutorService executor;
+    private PostgreConnection postgreConnection;
     private final AtomicInteger recordInsertSeq = new AtomicInteger(0);
-    private NamedParameterJdbcTemplate template;
 
     public PostgreOffsetBackingStore() {
     }
@@ -54,28 +55,12 @@ public class PostgreOffsetBackingStore implements OffsetBackingStore {
         return (data != null) ? ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8)) : null;
     }
 
-    public DataSource getDataSource() {
-        DriverManagerDataSource ds = new DriverManagerDataSource();
-        ds.setDriverClassName("org.postgresql.Driver");
-        ds.setUrl(this.config.getJdbcUrl());
-        ds.setUsername(this.config.getUser());
-        ds.setPassword(this.config.getPassword());
-        ds.setSchema(this.config.getTableSchema());
-        return ds;
-    }
-
-    public NamedParameterJdbcTemplate getTemplate() throws SQLException {
-        if (Objects.isNull(template)) {
-            template = new NamedParameterJdbcTemplate(getDataSource());
-        }
-        return template;
-    }
-
     @Override
     public void configure(WorkerConfig config) {
         try {
             Configuration configuration = Configuration.from(config.originalsStrings());
             this.config = new PostgreOffsetBackingStoreConfig(configuration, config);
+            this.postgreConnection = new PostgreConnection(this.config);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to connect JDBC offset backing store: " + config.originalsStrings(), e);
         }
@@ -96,7 +81,7 @@ public class PostgreOffsetBackingStore implements OffsetBackingStore {
     }
 
     private void initializeTable() throws SQLException {
-        DatabaseMetaData dbMeta = getTemplate().getJdbcTemplate().getDataSource().getConnection().getMetaData();
+        DatabaseMetaData dbMeta = postgreConnection.getConnection().getMetaData();
         ResultSet tableExists = dbMeta.getTables(null, null, config.getTableName(), null);
 
         if (tableExists.next()) {
@@ -104,76 +89,41 @@ public class PostgreOffsetBackingStore implements OffsetBackingStore {
         }
 
         LOGGER.info("Creating table {} to store offset", config.getTableName());
-        executeQuery(config.getTableCreate());
-    }
-
-    public void executeQuery(final String query) {
-        try {
-            getTemplate().getJdbcOperations().execute(query);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void updateQuery(final String query, final Offset obj) {
-        try {
-            Map<String, Object> parameters = new HashMap<>();
-            parameters.put("id", obj.getId());
-            parameters.put("key", obj.getKey());
-            parameters.put("value", obj.getValue());
-            parameters.put("timestamp", obj.getTimestamp());
-            parameters.put("pos", obj.getPos());
-
-            getTemplate().execute(query, parameters, new PreparedStatementCallback() {
-                @Override
-                public Object doInPreparedStatement(PreparedStatement ps) throws SQLException, DataAccessException {
-                    return ps.executeUpdate();
-                }
-            });
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        postgreConnection.executeQuery(config.getTableCreate());
     }
 
     protected void save() {
         LOGGER.debug("Saving data to state table...");
 
-        executeQuery(config.getTableDelete());
+        postgreConnection.executeQuery(config.getTableDelete());
 
         for (Map.Entry<String, String> mapEntry : data.entrySet()) {
             Timestamp currentTs = new Timestamp(System.currentTimeMillis());
             String key = (mapEntry.getKey() != null) ? mapEntry.getKey() : null;
             String value = (mapEntry.getValue() != null) ? mapEntry.getValue() : null;
 
-            String query = config.getTableInsert();
-            updateQuery(
-                    query,
-                    new Offset(
-                        UUID.randomUUID().toString(),
-                        key,
-                        value,
-                        currentTs,
-                        recordInsertSeq.incrementAndGet()
-                    )
-            );
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("id", UUID.randomUUID().toString());
+            parameters.put("key", key);
+            parameters.put("value", value);
+            parameters.put("timestamp", currentTs);
+            parameters.put("pos", recordInsertSeq.incrementAndGet());
+
+            postgreConnection.updateQuery(config.getTableInsert(), parameters);
         }
     }
 
     private void load() {
         ConcurrentHashMap<String, String> tmpData = new ConcurrentHashMap<>();
-        try {
-            getTemplate().query(
-                    config.getTableSelect(),
-                    (rs, rowNum) -> {
-                        String key = rs.getString("offset_key");
-                        String val = rs.getString("offset_val");
-                        tmpData.put(key, val);
-                        return null;
-                    }
-            );
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        postgreConnection.query(
+                config.getTableSelect(),
+                (rs, rowNum) -> {
+                    String key = rs.getString("offset_key");
+                    String val = rs.getString("offset_val");
+                    tmpData.put(key, val);
+                    return null;
+                }
+        );
         data = tmpData;
     }
 
