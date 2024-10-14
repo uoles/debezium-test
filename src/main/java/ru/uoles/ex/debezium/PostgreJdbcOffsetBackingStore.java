@@ -39,9 +39,8 @@ public class PostgreJdbcOffsetBackingStore implements OffsetBackingStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(PostgreJdbcOffsetBackingStore.class);
 
     private JdbcOffsetBackingStoreConfig config;
-
-    protected ConcurrentHashMap<String, String> data = new ConcurrentHashMap<>();
-    protected ExecutorService executor;
+    private ConcurrentHashMap<String, String> data = new ConcurrentHashMap<>();
+    private ExecutorService executor;
     private final AtomicInteger recordInsertSeq = new AtomicInteger(0);
     private NamedParameterJdbcTemplate template;
 

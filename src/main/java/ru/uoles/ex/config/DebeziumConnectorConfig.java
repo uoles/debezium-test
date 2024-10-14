@@ -18,7 +18,7 @@ public class DebeziumConnectorConfig {
                 .with("offset.jdbc.url", env.getProperty("customer.datasource.jdbcurl"))
                 .with("offset.jdbc.user", env.getProperty("customer.datasource.username"))
                 .with("offset.jdbc.password", env.getProperty("customer.datasource.password"))
-                .with("offset.jdbc.schema", "dbz")
+                .with("offset.jdbc.schema", env.getProperty("customer.datasource.schema"))
                 .with("offset.flush.interval.ms", "5000")
                 .with("database.hostname", env.getProperty("customer.datasource.host"))
                 .with("database.port", env.getProperty("customer.datasource.port"))
