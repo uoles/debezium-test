@@ -1,4 +1,4 @@
-package ru.uoles.ex.debezium.offset.db;
+package ru.uoles.ex.debezium.db;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.PreparedStatementCallback;

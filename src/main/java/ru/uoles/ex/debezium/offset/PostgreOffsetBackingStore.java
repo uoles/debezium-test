@@ -1,7 +1,5 @@
 package ru.uoles.ex.debezium.offset;
 
-import com.google.common.collect.ImmutableMap;
-import io.debezium.annotation.Immutable;
 import io.debezium.config.Configuration;
 import org.apache.kafka.common.utils.ThreadUtils;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -10,7 +8,7 @@ import org.apache.kafka.connect.storage.OffsetBackingStore;
 import org.apache.kafka.connect.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.uoles.ex.debezium.offset.db.PostgreConnection;
+import ru.uoles.ex.debezium.db.PostgreConnection;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
