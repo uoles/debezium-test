@@ -1,5 +1,7 @@
 package ru.uoles.ex.debezium.offset;
 
+import com.google.common.collect.ImmutableMap;
+import io.debezium.annotation.Immutable;
 import io.debezium.config.Configuration;
 import org.apache.kafka.common.utils.ThreadUtils;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -102,14 +104,16 @@ public class PostgreOffsetBackingStore implements OffsetBackingStore {
             String key = (mapEntry.getKey() != null) ? mapEntry.getKey() : null;
             String value = (mapEntry.getValue() != null) ? mapEntry.getValue() : null;
 
-            Map<String, Object> parameters = new HashMap<>();
-            parameters.put("id", UUID.randomUUID().toString());
-            parameters.put("key", key);
-            parameters.put("value", value);
-            parameters.put("timestamp", currentTs);
-            parameters.put("pos", recordInsertSeq.incrementAndGet());
-
-            postgreConnection.updateQuery(config.getTableInsert(), parameters);
+            postgreConnection.updateQuery(
+                    config.getTableInsert(),
+                    new HashMap<>() {{
+                        put("id", UUID.randomUUID().toString());
+                        put("key", key);
+                        put("value", value);
+                        put("timestamp", currentTs);
+                        put("pos", recordInsertSeq.incrementAndGet());
+                    }}
+            );
         }
     }
 
