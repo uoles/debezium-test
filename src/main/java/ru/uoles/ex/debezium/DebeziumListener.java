@@ -1,5 +1,6 @@
 package ru.uoles.ex.debezium;
 
+import com.google.common.collect.ImmutableMap;
 import io.debezium.config.Configuration;
 import io.debezium.embedded.Connect;
 import io.debezium.engine.DebeziumEngine;
@@ -10,17 +11,22 @@ import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+import ru.uoles.ex.debezium.db.PostgreConnection;
+import ru.uoles.ex.debezium.db.PostgreJdbcTemplate;
+import ru.uoles.ex.debezium.config.PropertiesConfig;
+import ru.uoles.ex.debezium.offset.PostgreOffsetBackingStoreConstants;
 import ru.uoles.ex.service.CustomerService;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import static io.debezium.data.Envelope.FieldName.*;
 import static io.debezium.data.Envelope.Operation;
@@ -30,18 +36,24 @@ import static java.util.stream.Collectors.toMap;
 @Component
 public class DebeziumListener {
 
-    private final Executor executor = Executors.newSingleThreadExecutor();
+    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(1, 1,
+        0L, TimeUnit.MILLISECONDS,
+        new LinkedBlockingQueue<Runnable>());
+
     private final DebeziumEngine<RecordChangeEvent<SourceRecord>> debeziumEngine;
+    private final PostgreJdbcTemplate postgreJdbcTemplate;
     private final CustomerService customerService;
 
     @Autowired
     public DebeziumListener(Configuration customerConnectorConfiguration, CustomerService customerService) {
         this.debeziumEngine = DebeziumEngine.create(ChangeEventFormat.of(Connect.class))
                 .using(customerConnectorConfiguration.asProperties())
+                .using(this.getClass().getClassLoader())
                 .notifying(this::handleChangeEvent)
                 .build();
 
         this.customerService = customerService;
+        this.postgreJdbcTemplate = PostgreConnection.INSTANCE.getTemplate();
     }
 
     private void handleChangeEvent(RecordChangeEvent<SourceRecord> sourceRecordRecordChangeEvent) {
@@ -84,10 +96,14 @@ public class DebeziumListener {
         return map;
     }
 
-    @PostConstruct
-    private void start() {
-        this.executor.execute(debeziumEngine);
-        log.info("--- DebeziumListener started.");
+    private boolean slotIsNotActive() {
+        List<Boolean> result = postgreJdbcTemplate.query(
+                PostgreOffsetBackingStoreConstants.SLOT_STATUS_SELECT,
+                ImmutableMap.of("slotName", PropertiesConfig.getSlotName()),
+                (rs, rowNum) -> rs.getBoolean("active")
+        );
+
+        return !CollectionUtils.isEmpty(result) && !result.get(0);
     }
 
     @PreDestroy
@@ -95,6 +111,15 @@ public class DebeziumListener {
         if (Objects.nonNull(this.debeziumEngine)) {
             this.debeziumEngine.close();
             log.info("--- DebeziumListener stopped.");
+        }
+    }
+
+    @Scheduled(initialDelay = 3000, fixedDelay = 15000)
+    private void execute() {
+        int count = this.executor.getActiveCount();
+        if (count == 0 && slotIsNotActive()) {
+            executor.execute(debeziumEngine);
+            log.info("--- DebeziumListener started");
         }
     }
 }

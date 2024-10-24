@@ -9,6 +9,13 @@ import ru.uoles.ex.repository.CustomerRepository;
 
 import java.util.Map;
 
+/**
+ * debezium-test
+ * Created by Intellij IDEA.
+ * Developer: uoles (Kulikov Maksim)
+ * Date: 20.07.2024
+ * Time: 15:19
+ */
 @Service
 @RequiredArgsConstructor
 public class CustomerService {

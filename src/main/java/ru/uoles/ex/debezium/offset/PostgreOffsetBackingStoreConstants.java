@@ -79,4 +79,13 @@ public final class PostgreOffsetBackingStoreConstants {
     public static final Field PROP_TABLE_INSERT = Field.create(PROP_PREFIX + "offset.table.insert")
             .withDescription("Insert syntax to add offset data to the jdbc table")
             .withDefault(DEFAULT_TABLE_INSERT);
+
+    public static final String SLOT_STATUS_SELECT =
+            "SELECT " +
+            "   slot_name, " +
+            "   active, " +
+            "   pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) as slot_lag, " +
+            "   pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)) as confirmed_lag " +
+            " FROM pg_replication_slots " +
+            " WHERE slot_name = :slotName ";
 }

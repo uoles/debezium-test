@@ -9,6 +9,8 @@ import org.apache.kafka.connect.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.uoles.ex.debezium.db.PostgreConnection;
+import ru.uoles.ex.debezium.db.PostgreJdbcTemplate;
+import ru.uoles.ex.debezium.config.PropertiesConfig;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -16,10 +18,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,7 +40,8 @@ public class PostgreOffsetBackingStore implements OffsetBackingStore {
     private PostgreOffsetBackingStoreConfig config;
     private ConcurrentHashMap<String, String> data = new ConcurrentHashMap<>();
     private ExecutorService executor;
-    private PostgreConnection postgreConnection;
+    private PostgreJdbcTemplate postgreJdbcTemplate;
+
     private final AtomicInteger recordInsertSeq = new AtomicInteger(0);
 
     public PostgreOffsetBackingStore() {
@@ -60,7 +60,7 @@ public class PostgreOffsetBackingStore implements OffsetBackingStore {
         try {
             Configuration configuration = Configuration.from(config.originalsStrings());
             this.config = new PostgreOffsetBackingStoreConfig(configuration, config);
-            this.postgreConnection = new PostgreConnection(this.config);
+            this.postgreJdbcTemplate = PostgreConnection.INSTANCE.getTemplate();
         } catch (Exception e) {
             throw new IllegalStateException("Failed to connect JDBC offset backing store: " + config.originalsStrings(), e);
         }
@@ -71,17 +71,17 @@ public class PostgreOffsetBackingStore implements OffsetBackingStore {
         executor = Executors.newFixedThreadPool(1, ThreadUtils.createThreadFactory(
                 this.getClass().getSimpleName() + "-%d", false));
 
-        LOGGER.info("Starting PostgresJdbcOffsetBackingStore db '{}'", config.getJdbcUrl());
+        LOGGER.info("Starting PostgresJdbcOffsetBackingStore db '{}'", PropertiesConfig.getJdbcUrl());
         try {
             initializeTable();
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to create JDBC offset table: " + config.getJdbcUrl(), e);
+            throw new IllegalStateException("Failed to create JDBC offset table: " + PropertiesConfig.getJdbcUrl(), e);
         }
         load();
     }
 
     private void initializeTable() throws SQLException {
-        DatabaseMetaData dbMeta = postgreConnection.getConnection().getMetaData();
+        DatabaseMetaData dbMeta = postgreJdbcTemplate.getConnection().getMetaData();
         ResultSet tableExists = dbMeta.getTables(null, null, config.getTableName(), null);
 
         if (tableExists.next()) {
@@ -89,20 +89,20 @@ public class PostgreOffsetBackingStore implements OffsetBackingStore {
         }
 
         LOGGER.info("Creating table {} to store offset", config.getTableName());
-        postgreConnection.executeQuery(config.getTableCreate());
+        postgreJdbcTemplate.executeQuery(config.getTableCreate());
     }
 
     protected void save() {
         LOGGER.debug("Saving data to state table...");
 
-        postgreConnection.executeQuery(config.getTableDelete());
+        postgreJdbcTemplate.executeQuery(config.getTableDelete());
 
         for (Map.Entry<String, String> mapEntry : data.entrySet()) {
             Timestamp currentTs = new Timestamp(System.currentTimeMillis());
             String key = (mapEntry.getKey() != null) ? mapEntry.getKey() : null;
             String value = (mapEntry.getValue() != null) ? mapEntry.getValue() : null;
 
-            postgreConnection.updateQuery(
+            postgreJdbcTemplate.updateQuery(
                     config.getTableInsert(),
                     new HashMap<>() {{
                         put("id", UUID.randomUUID().toString());
@@ -117,14 +117,12 @@ public class PostgreOffsetBackingStore implements OffsetBackingStore {
 
     private void load() {
         ConcurrentHashMap<String, String> tmpData = new ConcurrentHashMap<>();
-        postgreConnection.query(
+        postgreJdbcTemplate.query(
                 config.getTableSelect(),
-                (rs, rowNum) -> {
-                    String key = rs.getString("offset_key");
-                    String val = rs.getString("offset_val");
-                    tmpData.put(key, val);
-                    return null;
-                }
+                (rs, rowNum) -> tmpData.put(
+                        rs.getString("offset_key"),
+                        rs.getString("offset_val")
+                )
         );
         data = tmpData;
     }

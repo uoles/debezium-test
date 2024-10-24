@@ -29,12 +29,6 @@ public class PostgreOffsetBackingStoreConfig {
     private String tableDelete;
     @Getter
     private String tableInsert;
-    @Getter
-    private String jdbcUrl;
-    @Getter
-    private String user;
-    @Getter
-    private String password;
 
     public PostgreOffsetBackingStoreConfig(Configuration config, WorkerConfig configOriginal) {
         init(config, configOriginal);
@@ -46,11 +40,7 @@ public class PostgreOffsetBackingStoreConfig {
         this.tableSelect = String.format(config.getString(PROP_TABLE_SELECT), tableName);
         this.tableInsert = String.format(config.getString(PROP_TABLE_INSERT), tableName);
         this.tableDelete = String.format(config.getString(PROP_TABLE_DELETE), tableName, tableName);
-
-        this.tableSchema = configOriginal.originalsStrings().get("offset.jdbc.schema");
-        this.jdbcUrl = configOriginal.originalsStrings().get("offset.jdbc.url");
-        this.user = configOriginal.originalsStrings().get("offset.jdbc.user");
-        this.password = configOriginal.originalsStrings().get("offset.jdbc.password");
+        this.tableSchema = configOriginal.originalsStrings().get("database.schema");
     }
 
     public String getTableName() {
