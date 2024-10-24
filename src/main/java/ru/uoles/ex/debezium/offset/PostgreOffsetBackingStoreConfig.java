@@ -16,18 +16,14 @@ import static ru.uoles.ex.debezium.offset.PostgreOffsetBackingStoreConstants.*;
  * Source: https://review.couchbase.org/c/kafka-connect-mongo/+/202601/4/debezium-storage/
  *              debezium-storage-jdbc/src/main/java/io/debezium/storage/jdbc/offset/JdbcOffsetBackingStoreConfig.java
  */
+@Getter
 public class PostgreOffsetBackingStoreConfig {
 
     private String tableName;
-    @Getter
     private String tableSchema;
-    @Getter
     private String tableCreate;
-    @Getter
     private String tableSelect;
-    @Getter
     private String tableDelete;
-    @Getter
     private String tableInsert;
 
     public PostgreOffsetBackingStoreConfig(Configuration config, WorkerConfig configOriginal) {
@@ -43,7 +39,7 @@ public class PostgreOffsetBackingStoreConfig {
         this.tableSchema = configOriginal.originalsStrings().get("database.schema");
     }
 
-    public String getTableName() {
+    public String getFullTableName() {
         return String.join(".", tableSchema, tableName);
     }
 }

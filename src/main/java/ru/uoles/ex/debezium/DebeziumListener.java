@@ -14,10 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+import ru.uoles.ex.debezium.config.PropertiesConfig;
+import ru.uoles.ex.debezium.constants.SlotConstants;
 import ru.uoles.ex.debezium.db.PostgreConnection;
 import ru.uoles.ex.debezium.db.PostgreJdbcTemplate;
-import ru.uoles.ex.debezium.config.PropertiesConfig;
-import ru.uoles.ex.debezium.offset.PostgreOffsetBackingStoreConstants;
 import ru.uoles.ex.service.CustomerService;
 
 import javax.annotation.PreDestroy;
@@ -26,7 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static io.debezium.data.Envelope.FieldName.*;
 import static io.debezium.data.Envelope.Operation;
@@ -41,7 +43,7 @@ public class DebeziumListener {
         new LinkedBlockingQueue<Runnable>());
 
     private final DebeziumEngine<RecordChangeEvent<SourceRecord>> debeziumEngine;
-    private final PostgreJdbcTemplate postgreJdbcTemplate;
+    private final PostgreJdbcTemplate postgreJdbcTemplate = PostgreConnection.INSTANCE.getTemplate();
     private final CustomerService customerService;
 
     @Autowired
@@ -53,7 +55,6 @@ public class DebeziumListener {
                 .build();
 
         this.customerService = customerService;
-        this.postgreJdbcTemplate = PostgreConnection.INSTANCE.getTemplate();
     }
 
     private void handleChangeEvent(RecordChangeEvent<SourceRecord> sourceRecordRecordChangeEvent) {
@@ -86,7 +87,7 @@ public class DebeziumListener {
         }
     }
 
-    public Map<String, Object> getData(final Struct struct) {
+    private Map<String, Object> getData(final Struct struct) {
         Map<String, Object> map = new HashMap<>();
         if (Objects.nonNull(struct)) {
             map = struct.schema().fields().stream()
@@ -98,9 +99,9 @@ public class DebeziumListener {
 
     private boolean slotIsNotActive() {
         List<Boolean> result = postgreJdbcTemplate.query(
-                PostgreOffsetBackingStoreConstants.SLOT_STATUS_SELECT,
-                ImmutableMap.of("slotName", PropertiesConfig.getSlotName()),
-                (rs, rowNum) -> rs.getBoolean("active")
+                SlotConstants.SLOT_STATUS_SELECT,
+                ImmutableMap.of(SlotConstants.SLOT_NAME_PARAM, PropertiesConfig.getSlotName()),
+                (rs, rowNum) -> rs.getBoolean(SlotConstants.SLOT_ACTIVE_COLUMN)
         );
 
         return !CollectionUtils.isEmpty(result) && !result.get(0);

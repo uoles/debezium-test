@@ -8,9 +8,9 @@ import org.apache.kafka.connect.storage.OffsetBackingStore;
 import org.apache.kafka.connect.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.uoles.ex.debezium.config.PropertiesConfig;
 import ru.uoles.ex.debezium.db.PostgreConnection;
 import ru.uoles.ex.debezium.db.PostgreJdbcTemplate;
-import ru.uoles.ex.debezium.config.PropertiesConfig;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -18,7 +18,10 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -82,13 +85,13 @@ public class PostgreOffsetBackingStore implements OffsetBackingStore {
 
     private void initializeTable() throws SQLException {
         DatabaseMetaData dbMeta = postgreJdbcTemplate.getConnection().getMetaData();
-        ResultSet tableExists = dbMeta.getTables(null, null, config.getTableName(), null);
+        ResultSet tableExists = dbMeta.getTables(null, null, config.getFullTableName(), null);
 
         if (tableExists.next()) {
             return;
         }
 
-        LOGGER.info("Creating table {} to store offset", config.getTableName());
+        LOGGER.info("Creating table {} to store offset", config.getFullTableName());
         postgreJdbcTemplate.executeQuery(config.getTableCreate());
     }
 

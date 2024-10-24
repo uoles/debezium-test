@@ -20,12 +20,13 @@ public class PropertiesConfig {
     @SneakyThrows
     public static Properties getProperties() {
         if (Objects.isNull(configuration)) {
-            configuration = new Properties();
-            InputStream inputStream = PropertiesConfig.class
+            try (InputStream inputStream = PropertiesConfig.class
                     .getClassLoader()
-                    .getResourceAsStream("application.properties");
-            configuration.load(inputStream);
-            Objects.requireNonNull(inputStream).close();
+                    .getResourceAsStream("application.properties")
+            ) {
+                configuration = new Properties();
+                configuration.load(inputStream);
+            }
         }
         return configuration;
     }
