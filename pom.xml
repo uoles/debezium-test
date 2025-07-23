@@ -18,8 +18,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <debezium.version>1.9.4.Final</debezium.version>
+        <groovy.version>4.0.27</groovy.version>
     </properties>
 
     <dependencies>
@@ -68,6 +69,25 @@
         </dependency>
 
         <dependency>
+            <groupId>io.debezium</groupId>
+            <artifactId>debezium-scripting</artifactId>
+            <version>${debezium.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>${groovy.version}</version>
+            <type>pom</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-jsr223</artifactId>
+            <version>${groovy.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.12.0</version>
@@ -84,8 +104,8 @@
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
         </plugins>

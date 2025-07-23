@@ -37,6 +37,12 @@ public class DebeziumConfig {
                 .with("publication.autocreate.mode", "filtered")
                 .with("plugin.name", "pgoutput")
                 .with("slot.name", PropertiesConfig.getSlotName())
+
+                // фильтрация событий без изменений в базе
+                .with("transforms", "filter")
+                .with("transforms.filter.type", "io.debezium.transforms.Filter")
+                .with("transforms.filter.language", "jsr223.groovy")
+                .with("transforms.filter.condition", "value.op != 'r' && (value.before == null || value.after == null || value.before != value.after)")
                 .build();
     }
 }

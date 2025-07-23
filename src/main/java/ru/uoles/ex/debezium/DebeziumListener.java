@@ -104,7 +104,7 @@ public class DebeziumListener {
                 (rs, rowNum) -> rs.getBoolean(SlotConstants.SLOT_ACTIVE_COLUMN)
         );
 
-        return !CollectionUtils.isEmpty(result) && !result.get(0);
+        return CollectionUtils.isEmpty(result) || !result.get(0);
     }
 
     @PreDestroy
